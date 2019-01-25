@@ -59,6 +59,10 @@
   #include "../../feature/bedlevel/ubl/ubl.h"
 #endif
 
+/**
+ * Include all needed font files
+ * (See http://marlinfw.org/docs/development/fonts.html)
+ */
 #include "fontdata/fontdata_ISO10646_1.h"
 #if ENABLED(USE_SMALL_INFOFONT)
   #include "fontdata/fontdata_6x9_marlin.h"
@@ -254,11 +258,11 @@ void MarlinUI::clear_lcd() { } // Automatically cleared by Picture Loop
       lcd_put_wchar('E');
       lcd_put_wchar((char)('1' + extruder));
       lcd_put_wchar(' ');
-      lcd_put_u8str(itostr3(thermalManager.degHotend(extruder)));
+      lcd_put_u8str(i16tostr3(thermalManager.degHotend(extruder)));
       lcd_put_wchar('/');
 
       if (get_blink() || !thermalManager.is_heater_idle(extruder))
-        lcd_put_u8str(itostr3(thermalManager.degTargetHotend(extruder)));
+        lcd_put_u8str(i16tostr3(thermalManager.degTargetHotend(extruder)));
     }
 
   #endif // ADVANCED_PAUSE_FEATURE

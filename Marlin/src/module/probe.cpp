@@ -38,8 +38,8 @@
 #include "../gcode/gcode.h"
 #include "../lcd/ultralcd.h"
 
-#if ENABLED(BLTOUCH) || ENABLED(Z_PROBE_SLED) || ENABLED(Z_PROBE_ALLEN_KEY) || ENABLED(PROBE_TRIGGERED_WHEN_STOWED_TEST)
-  #include "../Marlin.h" // for stop()
+#if ENABLED(BLTOUCH) || ENABLED(Z_PROBE_SLED) || ENABLED(Z_PROBE_ALLEN_KEY) || ENABLED(PROBE_TRIGGERED_WHEN_STOWED_TEST) || (QUIET_PROBING && ENABLED(PROBING_STEPPERS_OFF))
+  #include "../Marlin.h" // for stop(), disable_e_steppers
 #endif
 
 #if HAS_LEVELING
@@ -268,31 +268,13 @@ float zprobe_zoffset; // Initialized by settings.load()
 
 #endif // Z_PROBE_ALLEN_KEY
 
-#if ENABLED(PROBING_FANS_OFF)
-
-  void fans_pause(const bool p) {
-    if (p != fans_paused) {
-      fans_paused = p;
-      if (p)
-        for (uint8_t x = 0; x < FAN_COUNT; x++) {
-          paused_fan_speed[x] = fan_speed[x];
-          fan_speed[x] = 0;
-        }
-      else
-        for (uint8_t x = 0; x < FAN_COUNT; x++)
-          fan_speed[x] = paused_fan_speed[x];
-    }
-  }
-
-#endif // PROBING_FANS_OFF
-
 #if QUIET_PROBING
   void probing_pause(const bool p) {
     #if ENABLED(PROBING_HEATERS_OFF)
       thermalManager.pause(p);
     #endif
     #if ENABLED(PROBING_FANS_OFF)
-      fans_pause(p);
+      thermalManager.set_fans_paused(p);
     #endif
     #if ENABLED(PROBING_STEPPERS_OFF)
       disable_e_steppers();
@@ -511,6 +493,30 @@ bool set_probe_deployed(const bool deploy) {
   }
 #endif
 
+#if ENABLED(MEASURE_BACKLASH_WHEN_PROBING)
+  #if ENABLED(Z_MIN_PROBE_ENDSTOP)
+    #define TEST_PROBE_PIN (READ(Z_MIN_PROBE_PIN) != Z_MIN_PROBE_ENDSTOP_INVERTING)
+  #else
+    #define TEST_PROBE_PIN (READ(Z_MIN_PIN) != Z_MIN_ENDSTOP_INVERTING)
+  #endif
+
+  extern float backlash_measured_mm[];
+  extern uint8_t backlash_measured_num[];
+
+  /* Measure Z backlash by raising nozzle in increments until probe deactivates */
+  static void measure_backlash_with_probe() {
+    if (backlash_measured_num[Z_AXIS] == 255) return;
+
+    float start_height = current_position[Z_AXIS];
+    while (current_position[Z_AXIS] < (start_height + BACKLASH_MEASUREMENT_LIMIT) && TEST_PROBE_PIN)
+      do_blocking_move_to_z(current_position[Z_AXIS] + BACKLASH_MEASUREMENT_RESOLUTION, MMM_TO_MMS(BACKLASH_MEASUREMENT_FEEDRATE));
+
+    // The backlash from all probe points is averaged, so count the number of measurements
+    backlash_measured_mm[Z_AXIS] += current_position[Z_AXIS] - start_height;
+    backlash_measured_num[Z_AXIS]++;
+  }
+#endif
+
 /**
  * @brief Used by run_z_probe to do a single Z probe move.
  *
@@ -545,11 +551,12 @@ static bool do_probe_move(const float z, const float fr_mm_s) {
 
   // Disable stealthChop if used. Enable diag1 pin on driver.
   #if ENABLED(SENSORLESS_PROBING)
+    sensorless_t stealth_states { false, false, false };
     #if ENABLED(DELTA)
-      tmc_stallguard(stepperX);
-      tmc_stallguard(stepperY);
+      stealth_states.x = tmc_enable_stallguard(stepperX);
+      stealth_states.y = tmc_enable_stallguard(stepperY);
     #endif
-    tmc_stallguard(stepperZ);
+    stealth_states.z = tmc_enable_stallguard(stepperZ);
     endstops.enable(true);
   #endif
 
@@ -583,10 +590,10 @@ static bool do_probe_move(const float z, const float fr_mm_s) {
   #if ENABLED(SENSORLESS_PROBING)
     endstops.not_homing();
     #if ENABLED(DELTA)
-      tmc_stallguard(stepperX, false);
-      tmc_stallguard(stepperY, false);
+      tmc_disable_stallguard(stepperX, stealth_states.x);
+      tmc_disable_stallguard(stepperY, stealth_states.y);
     #endif
-    tmc_stallguard(stepperZ, false);
+    tmc_disable_stallguard(stepperZ, stealth_states.z);
   #endif
 
   // Retract BLTouch immediately after a probe if it was triggered
@@ -676,6 +683,10 @@ static float run_z_probe() {
         #endif
         return NAN;
       }
+
+      #if ENABLED(MEASURE_BACKLASH_WHEN_PROBING)
+        measure_backlash_with_probe();
+      #endif
 
   #if MULTIPLE_PROBING > 2
       probes_total += current_position[Z_AXIS];

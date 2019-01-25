@@ -378,8 +378,8 @@ static int read_serial(const uint8_t index) {
     template<const size_t buffer_size>
     void receive(char (&buffer)[buffer_size]) {
       uint8_t data = 0;
-      millis_t tranfer_timeout = millis() + RX_TIMESLICE;
-      while (PENDING(millis(), tranfer_timeout)) {
+      millis_t transfer_timeout = millis() + RX_TIMESLICE;
+      while (PENDING(millis(), transfer_timeout)) {
         switch (stream_state) {
           case StreamState::STREAM_RESET:
             stream_reset();
@@ -630,7 +630,7 @@ inline void get_serial_commands() {
           gcode_LastN = gcode_N;
         }
         #if ENABLED(SDSUPPORT)
-          else if (card.flag.saving && strcmp(command, "M29") != 0) // No line number with M29 in Pronterface
+          else if (card.flag.saving && command[0] == 'M' && command[1] == '2' && command[2] == '9' && (command[3] == '\0' || command[3] == ' '))
             return gcode_line_error(PSTR(MSG_ERR_NO_CHECKSUM), i);
         #endif
 
@@ -839,7 +839,7 @@ void advance_command_queue() {
 
     if (card.flag.saving) {
       char* command = command_queue[cmd_queue_index_r];
-      if (strstr_P(command, PSTR("M29"))) {
+      if (command[0] == 'M' && command[1] == '2' && command[2] == '9' && (command[3] == '\0' || command[3] == ' ')) {
         // M29 closes the file
         card.closefile();
         SERIAL_ECHOLNPGM(MSG_FILE_SAVED);

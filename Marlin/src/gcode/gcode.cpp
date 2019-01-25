@@ -285,8 +285,8 @@ void GcodeSuite::process_parsed_command(
       #endif
 
       #if ENABLED(SPINDLE_LASER_ENABLE)
-        case 3: M3_M4(true ); break;                              // M3: turn spindle/laser on, set laser/spindle power/speed, set rotation direction CW
-        case 4: M3_M4(false); break;                              // M4: turn spindle/laser on, set laser/spindle power/speed, set rotation direction CCW
+        case 3: M3_M4(false); break;                              // M3: turn spindle/laser on, set laser/spindle power/speed, set rotation direction CW
+        case 4: M3_M4(true ); break;                              // M4: turn spindle/laser on, set laser/spindle power/speed, set rotation direction CCW
         case 5: M5(); break;                                      // M5 - turn spindle/laser off
       #endif
 
@@ -336,7 +336,7 @@ void GcodeSuite::process_parsed_command(
         case 49: M49(); break;                                    // M49: Turn on or off G26 debug flag for verbose output
       #endif
 
-      #if ENABLED(ULTRA_LCD) && ENABLED(LCD_SET_PROGRESS_MANUALLY)
+      #if ENABLED(LCD_SET_PROGRESS_MANUALLY)
         case 73: M73(); break;                                    // M73: Set progress percentage (for display on LCD)
       #endif
 
@@ -576,6 +576,10 @@ void GcodeSuite::process_parsed_command(
         case 421: M421(); break;                                  // M421: Set a Mesh Bed Leveling Z coordinate
       #endif
 
+      #if ENABLED(BACKLASH_GCODE)
+        case 425: M425(); break;                                  // M425: Tune backlash compensation
+      #endif
+
       #if HAS_M206_COMMAND
         case 428: M428(); break;                                  // M428: Apply current_position to home_offset
       #endif
@@ -646,10 +650,11 @@ void GcodeSuite::process_parsed_command(
       #endif
 
       #if HAS_TRINAMIC
-        #if ENABLED(TMC_DEBUG)
-          case 122: M122(); break;
-        #endif
+        case 122: M122(); break;
         case 906: M906(); break;                                  // M906: Set motor current in milliamps using axis codes X, Y, Z, E
+        #if HAS_STEALTHCHOP
+          case 569: M569(); break;                                // M569: Enable stealthChop on an axis.
+        #endif
         #if ENABLED(MONITOR_DRIVER_STATUS)
           case 911: M911(); break;                                // M911: Report TMC2130 prewarn triggered flags
           case 912: M912(); break;                                // M912: Clear TMC2130 prewarn triggered flags
@@ -660,9 +665,14 @@ void GcodeSuite::process_parsed_command(
         #if USE_SENSORLESS
           case 914: M914(); break;                                // M914: Set StallGuard sensitivity.
         #endif
-        #if ENABLED(TMC_Z_CALIBRATION)
-          case 915: M915(); break;                                // M915: TMC Z axis calibration.
-        #endif
+      #endif
+
+      #if HAS_DRIVER(L6470)
+        case 122: M122(); break;                                   // M122: Report status
+        case 906: M906(); break;                                   // M906: Set or get motor drive level
+        case 916: M916(); break;                                   // M916: L6470 tuning: Increase drive level until thermal warning
+        case 917: M917(); break;                                   // M917: L6470 tuning: Find minimum current thresholds
+        case 918: M918(); break;                                   // M918: L6470 tuning: Increase speed until max or error
       #endif
 
       #if HAS_MICROSTEPS
@@ -670,7 +680,9 @@ void GcodeSuite::process_parsed_command(
         case 351: M351(); break;                                  // M351: Toggle MS1 MS2 pins directly, S# determines MS1 or MS2, X# sets the pin high/low.
       #endif
 
-      case 355: M355(); break;                                    // M355: Set case light brightness
+      #if HAS_CASE_LIGHT
+        case 355: M355(); break;                                  // M355: Set case light brightness
+      #endif
 
       #if ENABLED(DEBUG_GCODE_PARSER)
         case 800: parser.debug(); break;                          // M800: GCode Parser Test for M
