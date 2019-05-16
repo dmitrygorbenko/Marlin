@@ -140,7 +140,7 @@ matrix_3x3 matrix_3x3::transpose(const matrix_3x3 &original) {
 }
 
 void matrix_3x3::debug(PGM_P const title) {
-  if (title != NULL) {
+  if (title != nullptr) {
     serialprintPGM(title);
     SERIAL_EOL();
   }
@@ -156,4 +156,4 @@ void matrix_3x3::debug(PGM_P const title) {
   }
 }
 
-#endif // HAS_ABL
+#endif // HAS_ABL_OR_UBL

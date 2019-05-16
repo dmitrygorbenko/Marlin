@@ -28,21 +28,19 @@
 // Includes
 // --------------------------------------------------------------------------
 
-#include <stdint.h>
-
-#include "Arduino.h"
-
-#ifdef USBCON
-  #include <USBSerial.h>
-#endif
-
-#include "../../inc/MarlinConfigPre.h"
+#include "../shared/Marduino.h"
 #include "../shared/math_32bit.h"
 #include "../shared/HAL_SPI.h"
 #include "fastio_STM32.h"
 #include "watchdog_STM32.h"
 
-#include "HAL_timers_STM32.h"
+#include "../../inc/MarlinConfigPre.h"
+
+#include <stdint.h>
+
+#ifdef USBCON
+  #include <USBSerial.h>
+#endif
 
 // --------------------------------------------------------------------------
 // Defines
@@ -100,6 +98,8 @@
 #else
   #define NUM_SERIAL 1
 #endif
+
+#include "HAL_timers_STM32.h"
 
 /**
  * TODO: review this to return 1 for pins that are not analog input
@@ -165,7 +165,7 @@ void HAL_init(void);
 void HAL_clear_reset_source (void);
 
 /** reset reason */
-uint8_t HAL_get_reset_source (void);
+uint8_t HAL_get_reset_source(void);
 
 void _delay_ms(const int delay);
 
