@@ -1,0 +1,6 @@
+
+For building the code for Azteeg X5 GT board do next steps:
+1. Update platformIO by running: platformio update
+2. Edit configuration files
+3. Build with command: platformio run --environment LPC1769
+4. Copy file '.pioenvs/LPC1769/firmware.bin' into flash drive and insert it to Azteeg board
