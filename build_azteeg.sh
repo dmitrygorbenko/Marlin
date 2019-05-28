@@ -1,3 +1,3 @@
 #!/bin/bash
 
-pio run -e LPC1769
+platformio run --environment LPC1769
