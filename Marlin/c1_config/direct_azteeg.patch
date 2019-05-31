@@ -1,5 +1,5 @@
 diff --git a/Marlin/Configuration.h b/Marlin/Configuration.h
-index 0575d981f..35287b740 100644
+index 0575d981f..780abe962 100644
 --- a/Marlin/Configuration.h
 +++ b/Marlin/Configuration.h
 @@ -73,7 +73,7 @@
@@ -173,7 +173,7 @@ index 0575d981f..35287b740 100644
   *                                      X, Y, Z, E0 [, E1[, E2[, E3[, E4[, E5]]]]]
   */
 -#define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 4000, 500 }
-+#define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 161, 428 }
++#define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 161, 416 }
  
  /**
   * Default Max Feed Rate (mm/s)
